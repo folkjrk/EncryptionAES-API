@@ -1,33 +1,38 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Req } from '@nestjs/common';
 import { DataService } from './data.service';
 import { EncryptDataDto } from './dto/encrypt-data.dto';
 import { DecryptDataDto } from './dto/decrypt-data.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
 
-@ApiTags('Test Module')
 @Controller()
 export class DataController {
   constructor(private readonly dataService: DataService) {}
 
   @Post('get-encrypt-data')
-  async getEncryptData(@Body() encryptDataDto: EncryptDataDto): Promise<any> {
-    // Implement validation of request payload here
-    const encryptedData = this.dataService.encryptData(encryptDataDto.payload);
+  async encryptData(@Body() encryptDataDto: EncryptDataDto, @Req() req: Request): Promise<any> {
+    const privateKey = process.env.PRIVATE_KEY;
+    const aesKey = this.dataService.generateRandomAESKey();
+    this.dataService.storeAESKeyInSession(req, aesKey); // Store AES key in session
+    const encryptedPayload = this.dataService.encryptWithAES(encryptDataDto.payload, aesKey);
+    const encryptedAESKey = this.dataService.encryptWithPrivateKey(aesKey, privateKey);
     return {
       successful: true,
-      error_code: null,
-      data: encryptedData,
+      data: { data1: encryptedAESKey, data2: encryptedPayload }
     };
   }
 
   @Post('get-decrypt-data')
-  async getDecryptData(@Body() decryptDataDto: DecryptDataDto): Promise<any> {
-    // Implement validation of request payload here
-    const decryptedData = this.dataService.decryptData(decryptDataDto.data1, decryptDataDto.data2);
+  async decryptData(@Body() decryptDataDto: DecryptDataDto, @Req() req: Request): Promise<any> {
+    const publicKey = process.env.PUBLIC_KEY;
+    const aesKeyFromSession = this.dataService.getAESKeyFromSession(req); // Retrieve AES key from session
+    const decryptedAESKey = this.dataService.decryptWithPrivateKey(decryptDataDto.data1, aesKeyFromSession, publicKey);
+    const decryptedPayload = this.dataService.decryptWithAES(decryptDataDto.data2, aesKeyFromSession || decryptedAESKey);
     return {
       successful: true,
       error_code: null,
-      data: decryptedData,
+      data: {
+        payload: decryptedAESKey,
+      }
     };
   }
 }
