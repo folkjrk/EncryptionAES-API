@@ -1,6 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import * as crypto from 'crypto';
-import { Session } from 'express-session'; 
 
 @Injectable()
 export class DataService {
@@ -20,58 +19,61 @@ export class DataService {
   generateRandomAESKey() {
     return crypto.randomBytes(32).toString('hex'); // AES key length is 32 bytes
   }
-  // Store AES key in session
-  storeAESKeyInSession(req: any, aesKey: string) {
-    req.session.aesKey = aesKey;
-  }
-  
-  // Retrieve AES key from session
-  getAESKeyFromSession(req: any): string {
-    return req.session.aesKey;
-  }
 
   encryptWithAES(payload: string, key: string) {
-    const cipherWithAES = crypto.createCipheriv('aes-256-cbc', Buffer.from(key, 'hex'), crypto.randomBytes(16));
+    const cipherWithAES = crypto.createCipheriv('aes-256-cbc', Buffer.from(key, 'hex'), Buffer.from("602d907fc6e6c7ffe50327b0f6b1abfd", 'hex'));
     let encrypted = cipherWithAES.update(payload, 'utf-8', 'base64');
     encrypted += cipherWithAES.final('base64');
     return encrypted;
   }
 
   encryptWithPrivateKey(data: string, rsaPrivateKey: string) {
-    const aesKey = crypto.createHash('sha256').update(Buffer.from(rsaPrivateKey, 'base64')).digest().slice(0, 32);
-    const cipher = crypto.createCipheriv('aes-256-cbc', aesKey, crypto.randomBytes(16));
-    return Buffer.concat([cipher.update(data), cipher.final()]).toString('base64');
+    try {
+      // Encrypt the data using the private key
+      const encryptedData = crypto.privateEncrypt(
+        {
+          key: rsaPrivateKey,
+          padding: crypto.constants.RSA_PKCS1_PADDING
+        },
+        Buffer.from(data)
+      );
+  
+      // Return the encrypted data
+      return encryptedData.toString('base64');
+    } catch (error) {
+      console.error(error);
+      throw new BadRequestException('Failed to encrypt data with provided private key.');
+    }
   }
 
-  decryptWithPrivateKey( decryptData: string, aesKeyFormSession: string, publicKey: string) {
+  decryptWithPublicKey(encryptedAES: string, publicKey: string): string {
     try {
-      const aesKeyBuffer = Buffer.from(aesKeyFormSession, 'base64');
-      const rsaPrivateKeyBuffer = Buffer.from(publicKey, 'base64');
-      const decryptedAesKey = crypto.publicDecrypt(
+      const encryptedAESBuffer = Buffer.from(encryptedAES, 'base64');
+      // Decrypt the encrypted AES data using the RSA public key
+      const decryptedAES = crypto.publicDecrypt(
         {
-          key: rsaPrivateKeyBuffer,
-          padding: crypto.constants.RSA_PKCS1_PADDING,
+          key: publicKey,
+          padding: crypto.constants.RSA_PKCS1_PADDING
         },
-        aesKeyBuffer
+       encryptedAESBuffer
       );
-
-      const decipher = crypto.createDecipheriv('aes-256-cbc', decryptedAesKey, Buffer.alloc(16));
-      let decrypted = decipher.update(decryptData, 'base64', 'utf-8');
-      decrypted += decipher.final('utf-8');
-      return decrypted;
+  
+      // Return the decrypted data 
+      return decryptedAES.toString();
     } catch (error) {
+      console.error(error)
       throw new BadRequestException('Failed to decrypt data with provided public key.');
     }
   
   }
-
-  decryptWithAES(data: string, key: string) {
+  decryptWithAES(encryptedData: string, decryptedKey: string) {
     try {
-      const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(key, 'hex'), Buffer.alloc(16)); // Initialization vector length is 16 bytes
-      let decrypted = decipher.update(data, 'base64', 'utf-8');
+      const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(decryptedKey,'hex'), Buffer.from("602d907fc6e6c7ffe50327b0f6b1abfd", 'hex')); // Initialization vector length is 16 bytes
+      let decrypted = decipher.update(encryptedData, 'base64', 'utf-8');
       decrypted += decipher.final('utf-8');
       return decrypted;
     } catch (error) {
+      console.error(error);
       throw new BadRequestException('Failed to decrypt data with provided AES key.');
     }
   }
