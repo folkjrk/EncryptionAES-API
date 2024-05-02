@@ -1,2 +1,2 @@
-API-document: Swagger API for encrypting data by using AES and RSA algorithm
-Unit testing: testing merge fuction
+- API-document: Swagger API for encrypting data by using AES and RSA algorithms.
+- Unit testing: testing merge function.
