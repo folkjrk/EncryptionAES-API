@@ -1,2 +1,2 @@
-# Pre-Interview_Primo
-To answer question 13 and 14
+API-document: Swagger API for encrypting data by using AES and RSA algorithm
+Unit testing: testing merge fuction
