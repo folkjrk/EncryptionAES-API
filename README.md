@@ -1,3 +1,3 @@
 - API-document: Swagger API for encrypting data by using AES and RSA algorithms.
-- Using RestJs framewrok
+- Using NestJs framewrok
 - Unit testing: testing merge function.
