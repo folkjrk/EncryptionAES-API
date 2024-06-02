@@ -23,9 +23,9 @@ PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n<your-private-key-here>\n-----END PRIV
 PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n<your-public-key-here>\n-----END PUBLIC KEY-----" with the actual keys generated from CryptoTools.
 ```
 
-## API Endpoints
+# API Endpoints
 
-# Encrypt Data
+## Encrypt Data
 - Endpoint: POST /get-encrypt-data
 - Description: Encrypts a string in the payload using AES encryption and an RSA-encrypted AES key.
 
@@ -41,7 +41,7 @@ Payload Example:
 }
 ```
 
-# Decrypt Data 
+## Decrypt Data 
 - Endpoint: POST /get-decrypt-data
 - Description: Decrypts the encrypted payload using the AES and RSA algorithms.
 
@@ -49,7 +49,7 @@ Steps:
 1. Get AES Key, Decrypt data1 with public key
 2. Get Payload, Decrypt data2 with AES key from step1
 
-## 2.Unit testing: testing merge function.
+# 2.Unit testing: testing merge function.
 
 For implementing function with this interface
     merge (int[] collection_1, int[] collection_2, int[] collection_3) : int []
